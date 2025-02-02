@@ -4,7 +4,6 @@ from django.utils.timezone import now, timedelta
 
 class Usuario(AbstractUser):
     """Usuário base para doadores, instituições e administradores."""
-    email = models.EmailField(unique=True)
     is_doador = models.BooleanField(default=False)
     is_instituicao = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
@@ -26,6 +25,9 @@ class Doador(models.Model):
     """Doador pode cadastrar doações."""
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
     telefone = models.CharField(max_length=15, blank=True, null=True)
+
+    def __str__(self):
+        return self.usuario.username
 
 class Instituicao(models.Model):
     """Instituição pode registrar necessidades."""
@@ -75,6 +77,9 @@ class Doacao(models.Model):
         """Marca a doação como realizada."""
         self.status = 'Doad'
         self.save()
+
+    def __str__(self):
+        return f"{self.doador} - {self.descricao[:50]}..."
 
 class Necessidade(models.Model):
     """Modelo para cadastro de necessidades de uma instituição."""

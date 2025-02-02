@@ -2,6 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Doacao, Necessidade, Instituicao
 from .forms import DoacaoForm, NecessidadeForm
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User
+from django.contrib.auth import login, authenticate
+from django.contrib import messages
 
 
 def index(request):
@@ -11,6 +15,36 @@ def index(request):
     necessidades = Necessidade.objects.filter(aprovado_por_admin=True)[:5]
     return render(request, 'index.html', {'doacoes': doacoes, 'instituicoes': instituicoes, 'necessidades': necessidades})
 
+def DoacoesView(request):
+    doacoes = Doacao.objects.all()
+    return render(request, 'doacoes.html', {'doacoes': doacoes})    
+
+# def InstituicoesView(request):
+#     instituicoes = Instituicao.objects.all()
+#     return render(request, 'instituicoes.html', {'instituicoes': instituicoes})
+
+def register_view(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        account_type = request.POST.get('account_type')
+
+        if User.objects.filter(username=email).exists():
+            messages.error(request, "E-mail já cadastrado!")
+            return redirect('register')
+
+        user = User.objects.create_user(username=email, email=email, password=password)
+        user.first_name = name
+        user.save()
+
+        # Autenticar e logar o usuário automaticamente após o registro
+        user = authenticate(username=email, password=password)
+        if user:
+            login(request, user)
+            return redirect('index')
+
+    return render(request, 'register.html')
 
 @login_required
 def cadastrar_doacao(request):
