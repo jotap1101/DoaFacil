@@ -27,6 +27,11 @@ class NecessidadeForm(forms.ModelForm):
         model = Necessidade
         fields = ['item', 'descricao', 'quantidade', 'status']
 
+class EditNecessidadeForm(forms.ModelForm):
+    class Meta:
+        model = Necessidade
+        fields = ['item', 'descricao', 'quantidade', 'status']
+
 class UsuarioCadastroForm(UserCreationForm):
     tipo_usuario = forms.ModelChoiceField(
         queryset=TipoUsuario.objects.exclude(nome="Administrador"), 

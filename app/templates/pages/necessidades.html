@@ -28,7 +28,7 @@
                 <div class="modal-body">
                     {% csrf_token %}
                     <!-- Formulário de Necessidade -->
-                    {{ necessidade_form|crispy }}
+                    {{ add_necessidade_form|crispy }}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -61,6 +61,50 @@
     </div>
  </div>
 
+<!-- Modal de edição de necessidade -->
+<div class="modal fade" id="editNecessidadeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="editNecessidadeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="" method="post" id="editNecessidadeForm" class="needs-validation" novalidate>
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editNecessidadeModalLabel">Editar Necessidade</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {{ edit_necessidade_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de exclusão de necessidade -->
+<div class="modal fade" id="deleteNecessidadeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteNecessidadeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="deleteNecessidadeModalLabel">Excluir Necessidade</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir esta necessidade?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="" method="post" id="deleteNecessidadeForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Tabela de Necessidades -->
 <div class="table-container mt-4">
     <table class="table align-middle">
@@ -84,15 +128,18 @@
                 <td scope="row">{{ necessidade.descricao }}</td>
                 <td scope="row">{{ necessidade.status }}</td>
                 <td scope="row">
-                    {% if request.user == necessidade.usuario or request.user.tipo_usuario == "Administrador"%}
-                    <button type="button" class="btn btn-warning btn-sm update-necessidade" data-bs-toggle="modal" data-bs-target="#updateNecessidadeModal" data-necessidade-id="{{ necessidade.id }}">
+                    <a href="{% url 'detalhar_necessidade' necessidade.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye"></i> 
+                        Detalhes
+                    </a>
+                    {% if user == necessidade.usuario or user.tipo_usuario.nome == "Administrador"%}
+                    <button type="button" class="btn btn-warning btn-sm update-necessidade" data-bs-toggle="modal" data-bs-target="#editNecessidadeModal" data-necessidade-id="{{ necessidade.id }}">
                         <i class="fas fa-edit"></i>
                         Editar
                     </button>
-                    <button type="button" class="btn btn-danger btn-sm delete-necessidade mt-2 mt-xl-0" data-necessidade-id="{{ necessidade.id }}">
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteNecessidadeModal" data-necessidade-id="{{ necessidade.id }}">
                         <i class="fas fa-trash"></i>
                         Excluir
-                    </button>
                     {% endif %}
                 </td>
             </tr>
@@ -105,3 +152,55 @@
     </table>
 </div>
 {% endblock content %}
+
+{% block scripts %}
+<script>
+    // Lógica de editar necessidade
+    const editModal = document.getElementById('editNecessidadeModal');
+    const editForm = document.getElementById('editNecessidadeForm');
+
+    editModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const necessidadeId = button.getAttribute('data-necessidade-id');
+        editForm.action = `/necessidades/${necessidadeId}/editar-necessidade/`;
+
+        fetch(`/necessidades/${necessidadeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                $('#editNecessidadeForm #id_item').val(data.item);
+                $('#editNecessidadeForm #id_descricao').val(data.descricao);
+                $('#editNecessidadeForm #id_quantidade').val(data.quantidade);
+                $('#editNecessidadeForm #id_status').val(data.status);
+            });
+
+        editForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(editForm);
+            fetch(editForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao editar necessidade');
+                }
+            });
+        });
+    });
+    
+    // Exibir modal de excluir necessidade
+    document.querySelectorAll('button[data-necessidade-id]').forEach(button => {
+        button.addEventListener('click', function() {
+            const necessidadeId = this.getAttribute('data-necessidade-id');
+            const form = document.getElementById('deleteNecessidadeForm');
+            form.action = `/necessidades/${necessidadeId}/excluir-necessidade/`;
+        });
+    });
+</script>
+{% endblock scripts %}

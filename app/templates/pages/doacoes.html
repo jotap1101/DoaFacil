@@ -5,11 +5,6 @@
 {% block content %}
 
 <div class="d-flex flex-column flex-md-row justify-content-start my-3 gap-3">
-    {{ request.user.tipo_usuario }}
-
-    {% if request.user != doacao.usuario %}
-    asdsadsa
-    {% endif %}
     <!-- Botões para abrir os modais -->
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDoacaoModal">
         <i class="fas fa-plus me-1"></i>
@@ -22,7 +17,8 @@
 </div>
 
 <!-- Modal de adicionar doação -->
-<div class="modal fade" id="createDoacaoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createDoacaoModalLabel" aria-hidden="true">
+<div class="modal fade" id="createDoacaoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="createDoacaoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{% url 'cadastrar_doacao' %}" method="post" class="needs-validation" novalidate>
@@ -44,7 +40,8 @@
 </div>
 
 <!-- Modal de adicionar item -->
-<div class="modal fade" id="createItemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createItemModalLabel" aria-hidden="true">
+<div class="modal fade" id="createItemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="createItemModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{% url 'cadastrar_item' %}" method="post" class="needs-validation" novalidate>
@@ -65,11 +62,12 @@
     </div>
 </div>
 
-<!-- Modal de edição de doação (dinâmico) -->
-<div class="modal fade" id="editDoacaoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="editDoacaoModalLabel" aria-hidden="true">
+<!-- Modal de edição de doação -->
+<div class="modal fade" id="editDoacaoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="editDoacaoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="post" id="editDoacaoForm" class="needs-validation" novalidate>
+            <form action="" method="post" id="editDoacaoForm" class="needs-validation" novalidate>
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="editDoacaoModalLabel">Editar Doação</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -83,6 +81,28 @@
                     <button type="submit" class="btn btn-primary">Salvar Alterações</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de exclusão de doação -->
+<div class="modal fade" id="deleteDoacaoModal" tabindex="-1" aria-labelledby="deleteDoacaoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteDoacaoModalLabel">Excluir Doação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir esta doação?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <form action="" id="deleteDoacaoForm" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -112,18 +132,19 @@
                 <td>{{ doacao.estado_conservacao }}</td>
                 <td>{{ doacao.status }}</td>
                 <td>
-                    <a href="{% url 'detalhes_doacao' doacao.id %}" class="btn btn-info btn-sm">
+                    <a href="{% url 'detalhar_doacao' doacao.id %}" class="btn btn-info btn-sm">
                         <i class="fas fa-eye"></i> Detalhes
                     </a>
                     {% if user.tipo_usuario.nome == "Administrador" or user == doacao.usuario %}
-                    <button type="button" class="btn btn-warning btn-sm update-doacao"
-                            data-bs-toggle="modal" data-bs-target="#editDoacaoModal"
-                            data-doacao-id="{{ doacao.id }}" data-doacao-url="{% url 'editar_doacao' doacao.id %}">
-                        <i class="fas fa-edit"></i> Editar
+                    <button type="button" class="btn btn-warning btn-sm update-doacao" data-bs-toggle="modal"
+                        data-bs-target="#editDoacaoModal" data-doacao-id="{{ doacao.id }}">
+                        <i class="fas fa-edit ms-1"></i>
+                        Editar
                     </button>
-                    <button type="button" class="btn btn-danger btn-sm delete-doacao mt-2 mt-xl-0"
-                            data-doacao-id="{{ doacao.id }}">
-                        <i class="fas fa-trash"></i> Excluir
+                    <button type="button" class="btn btn-danger btn-sm delete-doacao" data-bs-toggle="modal"
+                        data-bs-target="#deleteDoacaoModal" data-doacao-id="{{ doacao.id }}">
+                        <i class="fas fa-trash-alt ms-1"></i>
+                        Excluir
                     </button>
                     {% endif %}
                 </td>
@@ -136,21 +157,57 @@
         </tbody>
     </table>
 </div>
+{% endblock content %}
 
+{% block scripts %}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const editButtons = document.querySelectorAll(".update-doacao");
+        // Lógica de editar doação
+        const editModal = document.getElementById('editDoacaoModal');
+        const editForm = document.getElementById('editDoacaoForm');
 
-        editButtons.forEach(button => {
-            button.addEventListener("click", function () {
-                const doacaoId = this.getAttribute("data-doacao-id");
-                const editForm = document.getElementById("editDoacaoForm");
-                const doacaoUrl = this.getAttribute("data-doacao-url");
+        editModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            let doacaoId = button.getAttribute('data-doacao-id');
+            editForm.action = `/doacoes/${doacaoId}/editar-doacao/`;
 
-                editForm.setAttribute("action", doacaoUrl);
+            fetch(`/doacoes/${doacaoId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    $('#editDoacaoForm #id_item').val(data.item);
+                    $('#editDoacaoForm #id_descricao').val(data.descricao);
+                    $('#editDoacaoForm #id_estado_conservacao').val(data.estado_conservacao);
+                    $('#editDoacaoForm #id_status').val(data.status);
+                });
+
+            editForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                fetch(editForm.action, {
+                    method: 'POST',
+                    body: new FormData(editForm),
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert('Erro ao editar doação');
+                        }
+                    });
+            });
+        });
+
+        // Exibir modal de excluir doação
+        document.querySelectorAll('button[data-doacao-id]').forEach(button => {
+            button.addEventListener('click', function() {
+                const doacaoId = this.getAttribute('data-doacao-id');
+                const form = document.getElementById('deleteDoacaoForm');
+                form.action = `/doacoes/${doacaoId}/excluir-doacao/`;
             });
         });
     });
 </script>
-
-{% endblock content %}
+{% endblock scripts %}

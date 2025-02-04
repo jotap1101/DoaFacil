@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from .models import *
 from .forms import *
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate, logout
@@ -99,7 +100,7 @@ def register_view(request):
 def doacoes_view(request):
     doacoes = Doacao.objects.all()
     add_doacao_form = DoacaoForm()
-    edit_doacao_form = EditDoacaoForm(instance=Doacao())    
+    edit_doacao_form = EditDoacaoForm()    
     item_form = ItemForm()
     context  = {
         'user': request.user,
@@ -111,22 +112,17 @@ def doacoes_view(request):
     return render(request, 'pages/doacoes.html', context)
 
 @login_required(login_url= reverse_lazy('login'))
-def detalhes_doacao(request, doacao_id):
+def buscar_dados_doacao(request, doacao_id):
     doacao = get_object_or_404(Doacao, id=doacao_id)
-    doador = doacao.usuario  # Pegamos o usuário que fez a doação
-    return render(request, 'pages/detalhes_doacao.html', {'doacao': doacao, 'doador': doador})
-
-@login_required(login_url= reverse_lazy('login'))
-def necessidades_view(request):
-    necessidades = Necessidade.objects.all()
-    necessidade_form = NecessidadeForm()
-    item_form = ItemForm()
-    context = {
-        'necessidades': necessidades,
-        'necessidade_form': necessidade_form,
-        'item_form': item_form
+    data = {
+        'id': doacao.id,
+        'item': doacao.item.id,
+        'descricao': doacao.descricao,
+        'estado_conservacao': doacao.estado_conservacao,
+        'status': doacao.status
     }
-    return render(request, 'pages/necessidades.html', context)
+
+    return JsonResponse(data)
 
 @login_required(login_url= reverse_lazy('login'))
 def cadastrar_doacao(request):
@@ -144,6 +140,69 @@ def cadastrar_doacao(request):
     return redirect('doacoes')  # Redirecionar para a página de cadastro de doações caso o método da requisição não seja POST
 
 @login_required(login_url= reverse_lazy('login'))
+def detalhar_doacao(request, doacao_id):
+    doacao = get_object_or_404(Doacao, id=doacao_id)
+    doador = doacao.usuario  # Pegamos o usuário que fez a doação
+    context = {
+        'doacao': doacao,
+        'doador': doador
+    }
+    return render(request, 'pages/detalhes_doacao.html', context)
+
+@login_required(login_url= reverse_lazy('login'))
+def editar_doacao(request, doacao_id):
+    doacao = get_object_or_404(Doacao, id=doacao_id)
+
+    if request.method == 'POST':
+        doacao_form = EditDoacaoForm(request.POST, instance=doacao)
+        if doacao_form.is_valid():
+            doacao_form.save()
+            messages.success(request, 'Doação editada com sucesso!')
+            return JsonResponse({'success': True})
+        else:
+            messages.error(request, 'Erro ao editar doação.')
+            return JsonResponse({'success': False, 'errors': doacao_form.errors})
+        
+    return redirect('doacoes')
+
+@login_required(login_url= reverse_lazy('login'))
+def excluir_doacao(request, doacao_id):
+    doacao = get_object_or_404(Doacao, id=doacao_id)
+    doacao.delete()
+
+    messages.success(request, 'Doação excluída com sucesso!')
+
+    return redirect('doacoes')
+
+@login_required(login_url= reverse_lazy('login'))
+def necessidades_view(request):
+    necessidades = Necessidade.objects.all()
+    add_necessidade_form = NecessidadeForm()
+    edit_necessidade_form = EditNecessidadeForm()
+    item_form = ItemForm()
+    context = {
+        'user': request.user,
+        'necessidades': necessidades,
+        'add_necessidade_form': add_necessidade_form,
+        'edit_necessidade_form': edit_necessidade_form,
+        'item_form': item_form
+    }
+    return render(request, 'pages/necessidades.html', context)
+
+@login_required(login_url= reverse_lazy('login'))
+def buscar_dados_necessidade(request, necessidade_id):
+    necessidade = get_object_or_404(Necessidade, id=necessidade_id)
+    data = {
+        'id': necessidade.id,
+        'item': necessidade.item.id,
+        'descricao': necessidade.descricao,
+        'quantidade': necessidade.quantidade,
+        'status': necessidade.status
+    }
+
+    return JsonResponse(data)
+
+@login_required(login_url= reverse_lazy('login'))
 def cadastrar_necessidade(request):
     if request.method == 'POST':
         necessidade_form = NecessidadeForm(request.POST)
@@ -156,6 +215,41 @@ def cadastrar_necessidade(request):
         else:
             messages.error(request, 'Erro ao adicionar necessidade.')
             return redirect('necessidades')
+    return redirect('necessidades')
+
+@login_required(login_url= reverse_lazy('login'))
+def detalhar_necessidade(request, necessidade_id):
+    necessidade = get_object_or_404(Necessidade, id=necessidade_id)
+    necessitante = necessidade.usuario  # Pegamos o usuário que fez a necessidade
+    context = {
+        'necessidade': necessidade,
+        'necessitante': necessitante
+    }
+    return render(request, 'pages/detalhes_necessidade.html', context)
+
+@login_required(login_url= reverse_lazy('login'))
+def editar_necessidade(request, necessidade_id):
+    necessidade = get_object_or_404(Necessidade, id=necessidade_id)
+
+    if request.method == 'POST':
+        necessidade_form = EditNecessidadeForm(request.POST, instance=necessidade)
+        if necessidade_form.is_valid():
+            necessidade_form.save()
+            messages.success(request, 'Necessidade editada com sucesso!')
+            return JsonResponse({'success': True})
+        else:
+            messages.error(request, 'Erro ao editar necessidade.')
+            return JsonResponse({'success': False, 'errors': necessidade_form.errors})
+        
+    return redirect('necessidades')
+
+@login_required(login_url= reverse_lazy('login'))
+def excluir_necessidade(request, necessidade_id):
+    necessidade = get_object_or_404(Necessidade, id=necessidade_id)
+    necessidade.delete()
+
+    messages.success(request, 'Necessidade excluída com sucesso!')
+
     return redirect('necessidades')
 
 @login_required(login_url= reverse_lazy('login'))
@@ -172,22 +266,3 @@ def cadastrar_item(request):
             messages.error(request, 'Erro ao adicionar item.')
             return redirect(request.META.get('HTTP_REFERER'))
     return redirect('index')
-
-@login_required(login_url= reverse_lazy('login'))
-def editar_doacao(request, doacao_id):
-    doacao = get_object_or_404(Doacao, id=doacao_id)
-
-    if request.user != doacao.usuario:
-        messages.error(request, 'Você não tem permissão para editar esta doação.')
-        return redirect('doacoes')
-    
-    if request.method == 'POST':
-        doacao_form = EditDoacaoForm(request.POST, instance=doacao)
-        if doacao_form.is_valid():
-            doacao_form.save()
-            messages.success(request, 'Doação editada com sucesso!')
-            return redirect('doacoes')
-        else:
-            messages.error(request, 'Erro ao editar doação.')
-            return redirect('doacoes')
-    return redirect('doacoes')

@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="{% static 'css/global.css' %}">
 
     <!-- Header CSS -->
-    {% if request.path != '/user/login/' and request.path != '/user/register/' %}
+    {% if request.path != '/login/' and request.path != '/register/' %}
     <link rel="stylesheet" href="{% static 'css/_navbar.css' %}">
     {% endif %}
 
@@ -37,9 +37,9 @@
     <!-- Custom CSS -->
     {% block styles %}{% endblock styles %}
 </head>
-<body class="fs-6 {% if request.path == '/user/login/' %}d-flex flex-column align-items-center bg-body-tertiary{% endif %}">
+<body class="fs-6 {% if request.path == '/login/' or request.path == '/register/' %}d-flex flex-column align-items-center justify-content-center bg-body-tertiary{% endif %}">
     <!-- Header -->
-    {% if request.path != '/user/login/' and request.path != '/user/register/' %}
+    {% if request.path != '/login/' and request.path != '/register/' %}
         {% include "partials/_navbar.html" %}
     {% endif %}
     
@@ -69,7 +69,7 @@
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
     <!-- Header JS -->
-    {% if request.path != '/user/login/' and request.path != '/user/register/' %}
+    {% if request.path != '/login/' and request.path != '/register/' %}
     <script src="{% static 'js/header.js' %}"></script>
     {% endif %}
 
