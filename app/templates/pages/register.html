@@ -1,0 +1,36 @@
+{% extends 'base/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Cadastre-se{% endblock title %}
+
+{% block styles %}
+<style>
+    html,
+    body {
+        height: 100%;
+    }
+
+    .form-signin {
+        max-width: 500px;
+        padding: 1rem;
+    }
+</style>
+{% endblock styles %}
+
+{% block content %}
+<main class="form-signin w-100 m-auto">
+    <h1>Criar Conta</h1>
+
+    <form action="{% url 'register' %}"" method="post" class="needs-validation" autocomplete="off" novalidate>
+        {% csrf_token %}
+
+        {{ form|crispy }}
+
+        <div class="d-flex flex-column justify-content-center">
+            <button type="submit" class="btn btn-primary">Criar Conta</button>
+            <a href="{% url 'login' %}" class="btn btn-link mt-2">Já tem uma conta? Entre aqui</a>
+        </div>
+    </form>
+</main>
+{% endblock content %}

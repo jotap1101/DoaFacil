@@ -1,96 +1,107 @@
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from django.contrib.auth.models import AbstractUser
-from django.utils.timezone import now, timedelta
+
+class UsuarioManager(BaseUserManager):
+    def create_user(self, username, email, password=None, tipo_usuario=None, **extra_fields):
+        email = self.normalize_email(email)
+        user = self.model(username=username, email=email, tipo_usuario=tipo_usuario, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, password=None, tipo_usuario=None, **extra_fields):
+        tipo_usuario, created = TipoUsuario.objects.get_or_create(nome="Administrador")
+        
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        return self.create_user(username, email, password, tipo_usuario=tipo_usuario,**extra_fields)
+
+class TipoUsuario(models.Model):
+    class Meta:
+        verbose_name = "Tipo de usuário"
+        verbose_name_plural = "Tipos de usuários"
+
+    nome = models.CharField(max_length=255, unique=True, verbose_name="Nome")
+
+    def __str__(self):
+        return self.nome
 
 class Usuario(AbstractUser):
-    """Usuário base para doadores, instituições e administradores."""
-    is_doador = models.BooleanField(default=False)
-    is_instituicao = models.BooleanField(default=False)
-    is_admin = models.BooleanField(default=False)
-    
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name="+",
-        blank=True,
-        help_text="The groups this user belongs to.",
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name="+",
-        blank=True,
-        help_text="Specific permissions for this user.",
-    )
+    class Meta:
+        verbose_name = "Usuário"
+        verbose_name_plural = "Usuários"
 
-class Doador(models.Model):
-    """Doador pode cadastrar doações."""
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
-    telefone = models.CharField(max_length=15, blank=True, null=True)
+    tipo_usuario = models.ForeignKey(TipoUsuario, on_delete=models.CASCADE, verbose_name="Tipo de usuário")
+    objects = UsuarioManager()
 
     def __str__(self):
-        return self.usuario.username
-
-class Instituicao(models.Model):
-    """Instituição pode registrar necessidades."""
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
-    area_atuacao = models.CharField(max_length=100)
-    contato = models.CharField(max_length=100)
-
-    def total_necessidades_semanais(self):
-        """Retorna o número de necessidades registradas na última semana."""
-        uma_semana_atras = now() - timedelta(weeks=1)
-        return self.necessidade_set.filter(data_criacao__gte=uma_semana_atras).count()
+        return self.username
     
-    def pode_registrar_necessidade(self):
-        """Verifica se a instituição pode registrar uma nova necessidade."""
-        return self.total_necessidades_semanais() < 10
+class CategoriaItem(models.Model):
+    class Meta:
+        verbose_name = "Categoria"
+        verbose_name_plural = "Categorias"
 
-class Administrador(models.Model):
-    """Administrador pode gerenciar o sistema."""
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
+    nome = models.CharField(max_length=255, unique=True, verbose_name="Nome")
+
+    def __str__(self):
+        return self.nome    
+    
+class Item(models.Model):   
+    class Meta:
+        verbose_name = "Item"
+        verbose_name_plural = "Itens"
+
+    STATUS_CHOICES = [
+        ('Disponível', 'Disponível'),
+        ('Doado', 'Doado'),
+    ]
+
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='itens', verbose_name="Usuário")
+    nome = models.CharField(max_length=255, verbose_name="Nome")
+    categoria = models.ForeignKey(CategoriaItem, on_delete=models.CASCADE, verbose_name="Categoria")
+    descricao = models.TextField(verbose_name="Descrição")
+    data_disponibilidade = models.DateTimeField(auto_now_add=True, verbose_name="Data de disponibilidade")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Disponível', verbose_name="Status")
+
+    def __str__(self):
+        return self.nome
 
 class Doacao(models.Model):
-    """Modelo para cadastro de doações."""
-    doador = models.ForeignKey('Doador', on_delete=models.CASCADE)
-    nome = models.CharField(max_length=100)  # Campo adicionado
-    descricao = models.TextField()
-    categoria = models.CharField(max_length=50)
-    estado_conservacao = models.CharField(  # Campo adicionado
-        max_length=20,
-        choices=[
-            ('Novo', 'Novo'),
-            ('Usado', 'Usado'),
-            ('Bom', 'Bom'),
-            ('Ruim', 'Ruim'),
-        ],
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=[
-            ('Disponível', 'Disponível'),
-            ('Doad', 'Doad'),
-        ],
-        default='Disponível',
-    )
-    data_criacao = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        verbose_name = "Doação"
+        verbose_name_plural = "Doações"
 
-    def marcar_como_doad(self):
-        """Marca a doação como realizada."""
-        self.status = 'Doad'
-        self.save()
+    ESTADO_CONSERVACAO_CHOICES = [
+        ('Novo', 'Novo'),
+        ('Usado', 'Usado'),
+        ('Bom', 'Bom'),
+        ('Ruim', 'Ruim'),
+    ]
+
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='doacoes', verbose_name="Usuário")
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, verbose_name="Item")
+    descricao = models.TextField(verbose_name="Descrição")
+    estado_conservacao = models.CharField(max_length=20, choices=ESTADO_CONSERVACAO_CHOICES, verbose_name="Estado de conservação")
+    status = models.CharField(max_length=20, choices=Item.STATUS_CHOICES, default='Disponível', verbose_name="Status")
+    data_doacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de doação")
 
     def __str__(self):
-        return f"{self.doador} - {self.descricao[:50]}..."
+        return f"{self.usuario} - {self.item}"
 
 class Necessidade(models.Model):
-    """Modelo para cadastro de necessidades de uma instituição."""
-    instituicao = models.ForeignKey(Instituicao, on_delete=models.CASCADE)
-    descricao = models.TextField()
-    quantidade = models.PositiveIntegerField()
-    data_criacao = models.DateTimeField(auto_now_add=True)
-    aprovado_por_admin = models.BooleanField(default=False)
+    class Meta:
+        verbose_name = "Necessidade"
+        verbose_name_plural = "Necessidades"
 
-    def save(self, *args, **kwargs):
-        """Valida a regra de negócio antes de salvar uma nova necessidade."""
-        if not self.aprovado_por_admin and not self.instituicao.pode_registrar_necessidade():
-            raise ValueError("Limite de necessidades semanais atingido. Contate um administrador.")
-        super().save(*args, **kwargs)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='necessidades', verbose_name="Usuário")
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, verbose_name="Item")
+    descricao = models.TextField(verbose_name="Descrição")
+    quantidade = models.PositiveIntegerField(verbose_name="Quantidade")
+    aprovado_por_admin = models.BooleanField(default=False, verbose_name="Aprovado por administrador")
+    status = models.CharField(max_length=20, choices=Item.STATUS_CHOICES, default='Disponível', verbose_name="Status")
+    data_necessidade = models.DateTimeField(auto_now_add=True, verbose_name="Data de necessidade")
+
+    def __str__(self):
+        return f"{self.usuario} - {self.item} - {self.quantidade}"

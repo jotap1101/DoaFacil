@@ -1,0 +1,133 @@
+{% extends "base/base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<div class="d-flex flex-column flex-md-row justify-content-start my-3 gap-3">
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDoacaoModal">
+        <i class="fas fa-plus me-1"></i>
+        Adicionar Doação
+    </button>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createItemModal">
+        <i class="fas fa-plus me-1"></i>
+        Adicionar Item
+    </button>
+</div>
+
+<!-- Modal de adicionar doação -->
+<div class="modal fade" id="createDoacaoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createDoacaoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{% url 'cadastrar_doacao' %}" method="post" id="createDoacaoForm" class="needs-validation" novalidate>
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="createDoacaoModalLabel">Adicionar Doação</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <!-- Formulário de Doação -->
+                    {{add_doacao_form|crispy}}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de adicionar item -->
+ <div class="modal fade" id="createItemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{% url 'cadastrar_item' %}" method="post" id="createItemForm" class="needs-validation" novalidate>
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="createItemModalLabel">Adicionar Item</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {{item_form|crispy}}
+               </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar</button>
+                </div> 
+            </form>
+        </div>
+    </div>
+ </div>
+
+
+<!-- Tabela de Doações -->
+<div class="table-container mt-4">
+    <table class="table align-middle">
+        <caption>Lista de Doações</caption>
+        <thead class="text-center">
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">ID</th>
+                <th scope="col">Item</th>
+                <th scope="col">Descrição</th>
+                <th scope="col">Estado de Conservação</th>
+                <th scope="col">Status</th>
+                <th scope="col">Ações</th>
+            </tr>
+        </thead>
+        <tbody class="text-center table-group-divider" id="tableBody">
+            {% for doacao in doacoes %}
+             <!-- Modal de Editar Doação -->
+            <div class="modal fade" id="editDoacaoModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="editDoacaoModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form action="{% url 'editar_doacao' doacao.id %}" method="post" id="editDoacaoForm" class="needs-validation" novalidate>
+                            
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="editDoacaoModalLabel">Editar Doação</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% csrf_token %}
+
+                                {{ edit_doacao_form|crispy }}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <tr>
+                <td scope="row">{{ doacao.id }}</td>
+                <td scope="row">{{ doacao.id }}</td>
+                <td scope="row">{{ doacao.item.nome }}</td>
+                <td scope="row">{{ doacao.descricao }}</td>
+                <td scope="row">{{ doacao.estado_conservacao }}</td>
+                <td scope="row">{{ doacao.status }}</td>
+                <td scope="row">
+                    {% if request.user == doacao.usuario or request.user.tipo_usuario == "Administrador"%}
+                    <button type="button" class="btn btn-warning btn-sm update-doacao" data-bs-toggle="modal" data-bs-target="#editDoacaoModal" data-doacao-id="{{ doacao.id }}">
+                        <i class="fas fa-edit"></i>
+                        Editar
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm delete-doacao mt-2 mt-xl-0" data-doacao-id="{{ doacao.id }}">
+                        <i class="fas fa-trash"></i>
+                        Excluir
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr class="null">
+                <td colspan="7" class="text-center">Nenhuma doação encontrada</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock content %}

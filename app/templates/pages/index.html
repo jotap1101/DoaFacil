@@ -1,0 +1,12 @@
+{% extends "base/base.html" %}
+
+{% block content %}
+<header class="bg-light text-center p-5">
+    <h1>Facilitamos sua Doação!</h1>
+    <p>Cadastre suas doações e conecte-se a instituições que precisam de sua ajuda..</p>
+
+    <a href="{% url 'login' %}" class="btn btn-primary mt-2">Fazer Login</a>
+    <a href="{% url 'register' %}" class="btn btn-success mt-2">Criar uma conta</a>
+   
+</header>
+{% endblock content %}
