@@ -22,11 +22,10 @@ class EditDoacaoForm(forms.ModelForm):
             'status': forms.Select(),
 }
 
-
 class NecessidadeForm(forms.ModelForm):
     class Meta:
         model = Necessidade
-        fields = ['item', 'descricao', 'quantidade', 'aprovado_por_admin', 'status']
+        fields = ['item', 'descricao', 'quantidade', 'status']
 
 class UsuarioCadastroForm(UserCreationForm):
     tipo_usuario = forms.ModelChoiceField(
@@ -35,7 +34,7 @@ class UsuarioCadastroForm(UserCreationForm):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'password1', 'password2', 'email','tipo_usuario']
+        fields = ['username', 'password1', 'password2', 'email','telefone','tipo_usuario']
 
 class ItemForm(forms.ModelForm):
     class Meta:

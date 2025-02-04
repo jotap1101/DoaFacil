@@ -33,6 +33,7 @@ class Usuario(AbstractUser):
         verbose_name_plural = "Usuários"
 
     tipo_usuario = models.ForeignKey(TipoUsuario, on_delete=models.CASCADE, verbose_name="Tipo de usuário")
+    telefone = models.CharField(max_length=11, null=True, blank=True, verbose_name='Telefone')
     objects = UsuarioManager()
 
     def __str__(self):

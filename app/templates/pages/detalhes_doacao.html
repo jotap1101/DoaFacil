@@ -1,0 +1,28 @@
+{% extends "base/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Detalhes da Doação</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Informações da Doação</h5>
+            <p><strong>Item:</strong> {{ doacao.item.nome }}</p>
+            <p><strong>Descrição:</strong> {{ doacao.descricao }}</p>
+            <p><strong>Estado de Conservação:</strong> {{ doacao.estado_conservacao }}</p>
+            <p><strong>Status:</strong> {{ doacao.status }}</p>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title">Informações do Doador</h5>
+            <p><strong>Email:</strong> {% if doador.email %}{{ doador.email }}{% else %}-{% endif %}</p>
+            <p><strong>Telefone: </strong>{% if doador.telefone %}{{ doador.telefone }}{% else %}-{% endif %}</p>
+            <p><strong>Usuário:</strong> {{ doador.username }}</p>
+        </div>
+    </div>
+
+    <a href="{% url 'doacoes' %}" class="btn btn-secondary mt-3">Voltar</a>
+</div>
+{% endblock %}

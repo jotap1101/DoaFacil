@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
+from django.urls import reverse_lazy
 
 
 def index(request):
@@ -94,13 +95,14 @@ def register_view(request):
 
     return render(request, 'pages/register.html',context)
 
-@login_required
+@login_required(login_url= reverse_lazy('login'))
 def doacoes_view(request):
     doacoes = Doacao.objects.all()
     add_doacao_form = DoacaoForm()
     edit_doacao_form = EditDoacaoForm(instance=Doacao())    
     item_form = ItemForm()
     context  = {
+        'user': request.user,
         'doacoes': doacoes,
         'add_doacao_form': add_doacao_form,
         'edit_doacao_form': edit_doacao_form,
@@ -108,7 +110,13 @@ def doacoes_view(request):
     }
     return render(request, 'pages/doacoes.html', context)
 
-@login_required
+@login_required(login_url= reverse_lazy('login'))
+def detalhes_doacao(request, doacao_id):
+    doacao = get_object_or_404(Doacao, id=doacao_id)
+    doador = doacao.usuario  # Pegamos o usuário que fez a doação
+    return render(request, 'pages/detalhes_doacao.html', {'doacao': doacao, 'doador': doador})
+
+@login_required(login_url= reverse_lazy('login'))
 def necessidades_view(request):
     necessidades = Necessidade.objects.all()
     necessidade_form = NecessidadeForm()
@@ -120,7 +128,7 @@ def necessidades_view(request):
     }
     return render(request, 'pages/necessidades.html', context)
 
-@login_required
+@login_required(login_url= reverse_lazy('login'))
 def cadastrar_doacao(request):
     if request.method == 'POST':
         doacao_form = DoacaoForm(request.POST)
@@ -135,7 +143,7 @@ def cadastrar_doacao(request):
             return redirect('doacoes')  # Retornar para a página de cadastro de doações caso haja erro
     return redirect('doacoes')  # Redirecionar para a página de cadastro de doações caso o método da requisição não seja POST
 
-@login_required
+@login_required(login_url= reverse_lazy('login'))
 def cadastrar_necessidade(request):
     if request.method == 'POST':
         necessidade_form = NecessidadeForm(request.POST)
@@ -150,7 +158,7 @@ def cadastrar_necessidade(request):
             return redirect('necessidades')
     return redirect('necessidades')
 
-@login_required
+@login_required(login_url= reverse_lazy('login'))
 def cadastrar_item(request):
     if request.method == 'POST':
         item_form = ItemForm(request.POST)
@@ -165,7 +173,7 @@ def cadastrar_item(request):
             return redirect(request.META.get('HTTP_REFERER'))
     return redirect('index')
 
-@login_required
+@login_required(login_url= reverse_lazy('login'))
 def editar_doacao(request, doacao_id):
     doacao = get_object_or_404(Doacao, id=doacao_id)
 
